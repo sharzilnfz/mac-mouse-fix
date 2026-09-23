@@ -1,0 +1,38 @@
+name: Build Mac Mouse Fix
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Build Application
+        run: |
+          xcodebuild -project "Mouse Fix.xcodeproj" \
+                     -scheme "App - Release" \
+                     -configuration Release \
+                     OTHER_SWIFT_FLAGS="\$(inherited) -DFORCE_LICENSED" \
+                     CODE_SIGN_IDENTITY="" \
+                     CODE_SIGNING_REQUIRED=NO \
+                     CODE_SIGNING_ALLOWED=NO \
+                     build
+
+      - name: Prepare Artifact
+        run: |
+          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "Mac Mouse Fix.app" -type d | head -n 1)
+          echo "Found app at: $APP_PATH"
+          ditto -c -k --keepParent "$APP_PATH" "MacMouseFix-Unlocked.zip"
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacMouseFix-Unlocked
+          path: MacMouseFix-Unlocked.zip
